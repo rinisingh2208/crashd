@@ -28,7 +28,7 @@ logging.info("pwd : "+ path)
 time = datetime.now().strftime('%Y-%m-%d-%H:%M:%S.%f')
 logging.info("Creating directory to store result based on timestamp")
 extracting_crashd = subprocess.Popen(
-    ["mkdir", path+"troubleshooting/report_" + time],
+    ["mkdir", path+"report_" + time],
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE)
 output, errors = extracting_crashd.communicate()
@@ -63,7 +63,7 @@ logging.debug(output)
 logging.error(errors)
 
 logging.info("Extracting crashd binary")
-extracting_crashd = subprocess.Popen(["tar", "-xf", path+"troubleshooting/crashd_0.3.7_linux_amd64.tar.gz"],
+extracting_crashd = subprocess.Popen(["tar", "-xf", path+"crashd_0.3.7_linux_amd64.tar.gz"],
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
 output, errors = extracting_crashd.communicate()
@@ -128,7 +128,7 @@ worker_ips = list(worker_ips_set)
 
 result_files = []
 for ip in master_ip:
-    cmd = "crashd run --args=\"master_ip={0}, path={1}\" " "{1}troubleshooting/diagnostic.crsh" .format(ip,path)
+    cmd = "crashd run --args=\"master_ip={0}, path={1}\" " "{1}diagnostic.crsh" .format(ip,path)
     logging.info("Running diagnostic script on master for " + ip)
     print(cmd)
     run_crashd_script = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -137,9 +137,9 @@ for ip in master_ip:
     logging.debug(output)
     logging.error(errors)
     cmd = ["mv", "diagnostics" + ip + ".tar.gz",
-           path+"troubleshooting/report_" + time + "/diagnostics" + ip + ".tar.gz"]
+           path+"report_" + time + "/diagnostics" + ip + ".tar.gz"]
     result_files.append(
-        path+"troubleshooting/report_" + time + "/diagnostics" + ip + ".tar.gz")
+        path+"report_" + time + "/diagnostics" + ip + ".tar.gz")
     # print(cmd)
     run_mv_result = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, errors = run_mv_result.communicate()
@@ -154,10 +154,10 @@ def install_and_import(package):
         importlib.import_module(package)
     except ImportError:
         if sys.version_info[0] < 3:
-           installing_pip = subprocess.Popen(["sudo", "pip", "install", path+"troubleshooting/scp-0.14.4-py2.py3-none-any.whl"], stdout=subprocess.PIPE,
+           installing_pip = subprocess.Popen(["sudo", "pip", "install", path+"scp-0.14.4-py2.py3-none-any.whl"], stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE)
         else:
-             installing_pip = subprocess.Popen(["sudo", "pip3", "install", path+"troubleshooting/scp-0.14.4-py2.py3-none-any.whl"], stdout=subprocess.PIPE,
+             installing_pip = subprocess.Popen(["sudo", "pip3", "install", path+"scp-0.14.4-py2.py3-none-any.whl"], stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE)
         output, errors = installing_pip.communicate()
         moving_crashd.wait()
@@ -199,7 +199,7 @@ class remoExec(object):
         with SCPClient(con.get_transport()) as scp:
             scp.get('/home/centos/diagnostics' + ip + '.tar.gz', '/home/centos/diagnostics' + ip + '.tar.gz')
         moving_output = subprocess.Popen(["sudo", "mv", '/home/centos/diagnostics' + ip + '.tar.gz',
-                                          path+"troubleshooting/report_" + time],
+                                          path+"report_" + time],
                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, errors = moving_output.communicate()
         moving_output.wait()
@@ -244,7 +244,7 @@ class remoExec(object):
         global result_files
         logging.info("Running diagnostic script on worker for " + ip)
         result_files.append(
-            path+"troubleshooting/report_" + time + "/diagnostics" + ip + ".tar.gz")
+            path+"report_" + time + "/diagnostics" + ip + ".tar.gz")
         cmd = "crashd run --args=\"master_ip=%s, path=%s\" " "/tmp/diagnostic.crsh" % (ip,path)
         print(cmd)
         logging.info("run commands : {0}".format(str(cmd)))
@@ -287,7 +287,7 @@ install_and_import("scp")
 remote_object = remoExec()
 for worker_ip in worker_ips:
     # remote_object.exec_script(worker_ip)
-    remote_object.exec_copy_script(worker_ip, path+'troubleshooting/diagnostic.crsh')
+    remote_object.exec_copy_script(worker_ip, path+'diagnostic.crsh')
     remote_object.exec_copy_script(worker_ip, path+'ssh_passwordless_setup.py')
     remote_object.exec_pass_script(worker_ip)
     remote_object.exec_sudoers(worker_ip)
@@ -328,7 +328,7 @@ logging.debug(output)
 logging.error(errors)
 
 logging.info("Started to archive")
-archive_name = path+"troubleshooting/report_" + time + "/result"
+archive_name = path+"report_" + time + "/result"
 files2 = master_ip + worker_ips
 try:
     with tarfile.open(archive_name + '.tar.gz', mode='w:gz') as archive:
@@ -347,7 +347,7 @@ for ip in complete_ip:
     logging.error(errors)
 
 logging.info("Running analyze script")
-cmd = "crashd run --args=\"master_ip={0}, path={1}\" " "{1}troubleshooting/analyze.crsh" .format(master_ip[0],path)
+cmd = "crashd run --args=\"master_ip={0}, path={1}\" " "{1}analyze.crsh" .format(master_ip[0],path)
 print(cmd)
 run_crashd_script = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 output, errors = run_crashd_script.communicate()
@@ -355,4 +355,4 @@ run_crashd_script.wait()
 logging.info(output)
 logging.error(errors)
 
-print("Result stored in "+path+"troubleshooting/report_" + time + "/result.tar.gz")
+print("Result stored in "+path+"report_" + time + "/result.tar.gz")
