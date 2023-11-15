@@ -1,0 +1,21 @@
+# Crashd global config
+crshd = crashd_config(workdir="{0}/crashd".format(args.master_ip))
+#`print(json.encode(args))
+# Enumerate compute resources
+# Define a host list provider with configured SSH
+hosts=resources(
+    provider=host_list_provider(
+        hosts=[args.master_ip],
+        ssh_config=ssh_config(
+            username=os.username,
+            private_key_path="{0}/.ssh/id_rsa".format(os.home),
+        ),
+    ),
+)
+
+pods=run(cmd="/bin/bash "+args.path+"troubleshooting/Reportpod.sh a",resources=hosts)
+print("")
+print("Pods with issue")
+print("")
+print(pods.result)
+print("")
