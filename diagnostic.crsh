@@ -1,0 +1,30 @@
+# Crashd global config
+crshd = crashd_config(workdir="{0}/crashd".format(args.master_ip))
+#`print(json.encode(args))
+# Enumerate compute resources
+# Define a host list provider with configured SSH
+hosts=resources(
+    provider=host_list_provider(
+        hosts=[args.master_ip],
+        ssh_config=ssh_config(
+            username=os.username,
+            private_key_path="{0}/.ssh/id_rsa".format(os.home),
+        ),
+    ),
+)
+
+# collect data from hosts
+capture(cmd="sudo df -i", resources=hosts)
+capture(cmd="sudo crictl info", resources=hosts)
+capture(cmd="df -h /var/lib/containerd", resources=hosts)
+capture(cmd="sudo systemctl status kubelet", resources=hosts)
+capture(cmd="sudo systemctl status containerd", resources=hosts)
+capture(cmd="sudo journalctl -xeu kubelet", resources=hosts)
+capture(cmd="/bin/bash "+args.path+"log_deployment.sh",resources=hosts)
+capture(cmd="dmesg", resources=hosts)
+capture(cmd="sudo journalctl -u ntpd", resources=hosts)
+capture(cmd="timedatectl", resources=hosts)
+capture(cmd="sudo ntpq -p", resources=hosts)
+capture(cmd="sudo cat /var/log/messages", resources=hosts)
+# archive collected data
+archive(output_file="diagnostics"+args.master_ip+".tar.gz", source_paths=[crshd.workdir])
