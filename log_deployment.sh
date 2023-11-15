@@ -1,0 +1,1 @@
+pods=( $( kubectl get pods -n kube-system | tr -s " " | awk -F" " '{print $1}' ) )  for p in "${pods[@]}";do     echo ---------------------------     echo $p     echo ---------------------------     kubectl logs $p -n kube-system done
